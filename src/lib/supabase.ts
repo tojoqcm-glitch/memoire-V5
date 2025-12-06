@@ -10,6 +10,8 @@ export interface WaterLevel {
   timestamp: string;
   volume_m3: number;
   volume_liters: number;
+  water_consumed_liters?: number;
+  rain_recovered_liters?: number;
 }
 
 export interface AtmosphericCondition {

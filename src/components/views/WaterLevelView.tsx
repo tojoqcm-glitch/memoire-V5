@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Droplets, Calendar, TrendingDown, Search, Clock } from 'lucide-react';
+import { Droplets, Calendar, TrendingDown, Search, Clock, Cloud, AlertCircle } from 'lucide-react';
 import { WaterLevel } from '../../lib/supabase';
 import { supabase } from '../../lib/supabase';
 
@@ -196,6 +196,22 @@ export function WaterLevelView({ waterLevels, latestWater }: WaterLevelViewProps
                   {searchResult.volume_liters.toFixed(2)}
                 </p>
               </div>
+              {searchResult.water_consumed_liters !== undefined && searchResult.water_consumed_liters > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Eau consommée</p>
+                  <p className="text-3xl font-bold text-red-600">
+                    {searchResult.water_consumed_liters.toFixed(2)} L
+                  </p>
+                </div>
+              )}
+              {searchResult.rain_recovered_liters !== undefined && searchResult.rain_recovered_liters > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pluie récupérée</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {searchResult.rain_recovered_liters.toFixed(2)} L
+                  </p>
+                </div>
+              )}
             </div>
             <div className="bg-blue-100 dark:bg-blue-800/30 rounded-lg p-3 mt-4">
               <p className="text-xs text-gray-700 dark:text-gray-300 font-medium mb-1">
@@ -230,31 +246,50 @@ export function WaterLevelView({ waterLevels, latestWater }: WaterLevelViewProps
               {waterLevels.map((level, index) => (
                 <div
                   key={level.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-blue-50 transition"
+                  className="bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-600 transition overflow-hidden"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="bg-blue-100 p-2 rounded-lg">
-                      <Droplets className="w-5 h-5 text-blue-600" />
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-blue-100 p-2 rounded-lg">
+                        <Droplets className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {level.volume_m3.toFixed(3)} m³ • {level.volume_liters.toFixed(0)} L
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(level.timestamp).toLocaleString('fr-FR')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {level.volume_m3.toFixed(3)} m³
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(level.timestamp).toLocaleString('fr-FR')}
-                      </p>
+                    <div className="text-right">
+                      {index === 0 && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full block mb-2">
+                          Plus récent
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-blue-600">
-                      {level.volume_liters.toFixed(0)} L
-                    </p>
-                    {index === 0 && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                        Plus récent
-                      </span>
-                    )}
-                  </div>
+                  {(level.water_consumed_liters || level.rain_recovered_liters) && (
+                    <div className="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-600 flex gap-4">
+                      {level.water_consumed_liters !== undefined && level.water_consumed_liters > 0 && (
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-red-600" />
+                          <span className="text-sm font-medium text-red-600">
+                            Consomation: {level.water_consumed_liters.toFixed(2)} L
+                          </span>
+                        </div>
+                      )}
+                      {level.rain_recovered_liters !== undefined && level.rain_recovered_liters > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Cloud className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium text-green-600">
+                            Pluie: {level.rain_recovered_liters.toFixed(2)} L
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

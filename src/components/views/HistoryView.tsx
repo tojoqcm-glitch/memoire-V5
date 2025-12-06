@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, Search, Droplets, Thermometer, Clock } from 'lucide-react';
+import { Calendar, Search, Droplets, Thermometer, Clock, Cloud, Zap } from 'lucide-react';
 import { supabase, WaterLevel, AtmosphericCondition } from '../../lib/supabase';
 
 export function HistoryView() {
@@ -160,6 +160,22 @@ export function HistoryView() {
                         {searchResults.water.volume_liters.toFixed(2)}
                       </p>
                     </div>
+                    {searchResults.water.water_consumed_liters !== undefined && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Eau consommée</p>
+                        <p className="text-3xl font-bold text-red-600">
+                          {searchResults.water.water_consumed_liters.toFixed(2)} L
+                        </p>
+                      </div>
+                    )}
+                    {searchResults.water.rain_recovered_liters !== undefined && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pluie récupérée</p>
+                        <p className="text-3xl font-bold text-green-600">
+                          {searchResults.water.rain_recovered_liters.toFixed(2)} L
+                        </p>
+                      </div>
+                    )}
                     <div className="bg-blue-100 rounded-lg p-3">
                       <p className="text-xs text-gray-700 dark:text-gray-300 font-medium mb-1">
                         Enregistré le:

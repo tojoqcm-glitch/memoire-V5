@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, TrendingUp, Activity, Database, Calendar } from 'lucide-react';
+import { BarChart3, TrendingUp, Activity, Database, Calendar, Cloud, Droplets } from 'lucide-react';
 import { WaterLevel, AtmosphericCondition } from '../../lib/supabase';
 
 interface StatisticsViewProps {
@@ -18,11 +18,15 @@ export function StatisticsView({ waterLevels, atmospheric }: StatisticsViewProps
         avgVolume: 0,
         maxVolume: 0,
         minVolume: 0,
-        consumption: 0
+        consumption: 0,
+        totalConsumption: 0,
+        totalRainRecovered: 0
       };
     }
 
     const volumes = data.map(w => w.volume_m3);
+    const consumptions = data.map(w => w.water_consumed_liters || 0);
+    const rainRecovered = data.map(w => w.rain_recovered_liters || 0);
 
     let consumption = 0;
     if (data.length >= 2) {
@@ -36,7 +40,9 @@ export function StatisticsView({ waterLevels, atmospheric }: StatisticsViewProps
       avgVolume: volumes.reduce((a, b) => a + b, 0) / volumes.length,
       maxVolume: Math.max(...volumes),
       minVolume: Math.min(...volumes),
-      consumption: consumption
+      consumption: consumption,
+      totalConsumption: consumptions.reduce((a, b) => a + b, 0),
+      totalRainRecovered: rainRecovered.reduce((a, b) => a + b, 0)
     };
   };
 
@@ -204,6 +210,16 @@ export function StatisticsView({ waterLevels, atmospheric }: StatisticsViewProps
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
                 <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Consommation</p>
                 <p className="text-xl font-bold text-cyan-600">{waterStats.consumption.toFixed(3)} m³</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total consommé</p>
+                <p className="text-xl font-bold text-red-600">{waterStats.totalConsumption.toFixed(2)} L</p>
+              </div>
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Pluie récupérée</p>
+                <p className="text-xl font-bold text-green-600">{waterStats.totalRainRecovered.toFixed(2)} L</p>
               </div>
             </div>
           </div>
