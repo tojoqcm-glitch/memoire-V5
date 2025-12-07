@@ -1,4 +1,4 @@
-import { Thermometer, TrendingUp, Activity, CloudRain, Power, Droplets } from 'lucide-react';
+import { Thermometer, TrendingUp, Activity, CloudRain, Power, Droplets, Clock, Cloud } from 'lucide-react';
 import { WaterLevel, AtmosphericCondition } from '../../lib/supabase';
 import { StatisticsPanel } from '../StatisticsPanel';
 import { WaterTankCompact } from '../WaterTankCompact';
@@ -15,8 +15,52 @@ interface DashboardViewProps {
 export function DashboardView({ latestWater, latestAtmospheric, waterLevels, atmospheric, maxCapacity }: DashboardViewProps) {
   const status = detectRainAndPump(waterLevels);
 
+  const calculateDailyStats = () => {
+    if (waterLevels.length === 0) {
+      return { consumption: 0, rainRecovered: 0 };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayReadings = waterLevels.filter(level => {
+      const readingDate = new Date(level.timestamp);
+      readingDate.setHours(0, 0, 0, 0);
+      return readingDate.getTime() === today.getTime();
+    });
+
+    const consumption = todayReadings.reduce((sum, level) => sum + (level.water_consumed_liters || 0), 0);
+    const rainRecovered = todayReadings.reduce((sum, level) => sum + (level.rain_recovered_liters || 0), 0);
+
+    return { consumption, rainRecovered };
+  };
+
+  const dailyStats = calculateDailyStats();
+  const lastUpdateTime = latestWater ? new Date(latestWater.timestamp) : null;
+
   return (
     <div className="space-y-6">
+      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl shadow-sm p-4 border border-blue-200 dark:border-blue-800">
+        <div className="flex items-center gap-3">
+          <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Dernière mise à jour</p>
+            <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
+              {lastUpdateTime
+                ? lastUpdateTime.toLocaleString('fr-FR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                  })
+                : 'Aucune donnée'}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Niveau de la cuve</h2>
@@ -100,24 +144,35 @@ export function DashboardView({ latestWater, latestAtmospheric, waterLevels, atm
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-3 mb-4">
-            <div className="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-lg">
-              <Droplets className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+            <div className="bg-red-100 dark:bg-red-900 p-3 rounded-lg">
+              <Droplets className="w-6 h-6 text-red-600 dark:text-red-400" />
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Consommation journalière</h3>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {waterLevels.length > 0
-                  ? Math.max(0, (waterLevels[0]?.volume_liters || 0) - (waterLevels[waterLevels.length - 1]?.volume_liters || 0)).toFixed(0)
-                  : '0'
-                } L
+                {dailyStats.consumption.toFixed(0)} L
               </p>
             </div>
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            {waterLevels.length > 1
-              ? `De ${new Date(waterLevels[waterLevels.length - 1].timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} à ${new Date(waterLevels[0].timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-              : 'Pas assez de données'
-            }
+            {new Date().toLocaleDateString('fr-FR')}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-green-100 dark:bg-green-900 p-3 rounded-lg">
+              <Cloud className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Pluie récupérée</h3>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {dailyStats.rainRecovered.toFixed(0)} L
+              </p>
+            </div>
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            {new Date().toLocaleDateString('fr-FR')}
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { WaterLevel, AtmosphericCondition } from '../lib/supabase';
-import { BarChart3, Filter } from 'lucide-react';
+import { BarChart3, Filter, Cloud } from 'lucide-react';
 
 interface StatisticsPanelProps {
   waterLevels: WaterLevel[];
@@ -8,9 +8,13 @@ interface StatisticsPanelProps {
 }
 
 export function StatisticsPanel({ waterLevels, atmospheric }: StatisticsPanelProps) {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [filterActive, setFilterActive] = useState(false);
+  const today = new Date();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+
+  const [startDate, setStartDate] = useState(firstDayOfMonth);
+  const [endDate, setEndDate] = useState(lastDayOfMonth);
+  const [filterActive, setFilterActive] = useState(true);
 
   const filteredWaterLevels = useMemo(() => {
     if (!filterActive || (!startDate && !endDate)) return waterLevels;
@@ -37,30 +41,8 @@ export function StatisticsPanel({ waterLevels, atmospheric }: StatisticsPanelPro
   }, [atmospheric, startDate, endDate, filterActive]);
 
   const statistics = useMemo(() => {
-    if (filteredWaterLevels.length < 2) {
-      return {
-        consumption: 0,
-        avgVolume: 0,
-        minVolume: 0,
-        maxVolume: 0,
-        avgTemperature: 0,
-        minTemperature: 0,
-        maxTemperature: 0,
-      };
-    }
-
-    const sortedWater = [...filteredWaterLevels].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-    const firstVolume = sortedWater[0].volume_liters;
-    const lastVolume = sortedWater[sortedWater.length - 1].volume_liters;
-    const consumption = Math.max(0, firstVolume - lastVolume);
-
-    const volumes = filteredWaterLevels.map((l) => l.volume_liters);
-    const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
-    const minVolume = Math.min(...volumes);
-    const maxVolume = Math.max(...volumes);
+    const totalConsumption = filteredWaterLevels.reduce((sum, level) => sum + (level.water_consumed_liters || 0), 0);
+    const totalRainRecovered = filteredWaterLevels.reduce((sum, level) => sum + (level.rain_recovered_liters || 0), 0);
 
     let avgTemperature = 0;
     let minTemperature = 0;
@@ -74,10 +56,8 @@ export function StatisticsPanel({ waterLevels, atmospheric }: StatisticsPanelPro
     }
 
     return {
-      consumption,
-      avgVolume,
-      minVolume,
-      maxVolume,
+      totalConsumption,
+      totalRainRecovered,
       avgTemperature,
       minTemperature,
       maxTemperature,
@@ -159,19 +139,24 @@ export function StatisticsPanel({ waterLevels, atmospheric }: StatisticsPanelPro
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900 dark:to-red-800 rounded-lg p-4">
-          <h4 className="text-xs font-medium text-red-900 dark:text-red-100 mb-1">Consommation</h4>
-          <p className="text-2xl font-bold text-red-700 dark:text-red-300">{statistics.consumption.toFixed(2)} L</p>
-          <p className="text-xs text-red-600 dark:text-red-400 mt-1">Sur la période</p>
+          <h4 className="text-xs font-medium text-red-900 dark:text-red-100 mb-1">Consommation totale</h4>
+          <p className="text-2xl font-bold text-red-700 dark:text-red-300">{statistics.totalConsumption.toFixed(0)} L</p>
+          <p className="text-xs text-red-600 dark:text-red-400 mt-1">Sur la période sélectionnée</p>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-4">
-          <h4 className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-1">Volume Moyen</h4>
-          <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{statistics.avgVolume.toFixed(2)} L</p>
-          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Min: {statistics.minVolume.toFixed(2)} L / Max: {statistics.maxVolume.toFixed(2)} L</p>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 rounded-lg p-4">
+          <div className="flex items-start gap-2">
+            <Cloud className="w-4 h-4 text-green-900 dark:text-green-100 mt-1" />
+            <div className="flex-1">
+              <h4 className="text-xs font-medium text-green-900 dark:text-green-100 mb-1">Pluie récupérée</h4>
+              <p className="text-2xl font-bold text-green-700 dark:text-green-300">{statistics.totalRainRecovered.toFixed(0)} L</p>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">Sur la période sélectionnée</p>
+            </div>
+          </div>
         </div>
 
         <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900 dark:to-orange-800 rounded-lg p-4">
-          <h4 className="text-xs font-medium text-orange-900 dark:text-orange-100 mb-1">Température Moyenne</h4>
+          <h4 className="text-xs font-medium text-orange-900 dark:text-orange-100 mb-1">Température</h4>
           <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{statistics.avgTemperature.toFixed(1)}°C</p>
           <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Min: {statistics.minTemperature.toFixed(1)}°C / Max: {statistics.maxTemperature.toFixed(1)}°C</p>
         </div>
